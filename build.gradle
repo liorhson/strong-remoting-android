@@ -71,6 +71,18 @@ publishing {
     publications {
         maven(MavenPublication) {
             artifact androidReleaseJar
+            // TODO: sources, javadocs
+
+            pom.withXml {
+                def root = asNode()
+                def deps = new Node(root, 'dependencies')
+                configurations.compile.allDependencies.each { dep ->
+                    def node = new Node(deps, 'dependency')
+                    new Node(node, 'groupId', dep.group)
+                    new Node(node, 'artifactId', dep.name)
+                    new Node(node, 'version', dep.version);
+                }
+            }
         }
     }
 }
