@@ -3,7 +3,7 @@ package com.strongloop.android.remoting.test;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.strongloop.android.remoting.Prototype;
+import com.strongloop.android.remoting.Repository;
 import com.strongloop.android.remoting.VirtualObject;
 import com.strongloop.android.remoting.adapters.RestAdapter;
 import com.strongloop.android.remoting.adapters.RestContract;
@@ -21,7 +21,7 @@ public class RestContractTest extends AsyncTestCase {
     }
 
     private RestAdapter adapter;
-    private Prototype testClass;
+    private Repository testClass;
 
     @Override
     protected void setUp() throws Exception {
@@ -43,7 +43,7 @@ public class RestContractTest extends AsyncTestCase {
                 new RestContractItem("/ContractClass/:name/greet", "POST"),
                 "ContractClass.prototype.greet");
 
-        testClass = new Prototype("ContractClass");
+        testClass = new Repository("ContractClass");
         testClass.setAdapter(adapter);
     }
 

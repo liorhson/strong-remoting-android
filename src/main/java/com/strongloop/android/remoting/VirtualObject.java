@@ -8,39 +8,39 @@ import com.strongloop.android.remoting.adapters.Adapter;
 
 /**
  * A local representative of a single virtual object. The behavior of this
- * object is defined through a prototype defined on the server, and the identity
+ * object is defined through a model defined on the server, and the identity
  * of this instance is defined through its `creationParameters`.
  */
 public class VirtualObject {
 
-    private Prototype prototype;
+    private Repository repository;
     private Map<String, ? extends Object> creationParameters;
 
     /**
-     * Creates a new object from the given prototype and parameters.
-     * @param prototype The prototype this object should inherit from.
+     * Creates a new object from the given repository and parameters.
+     * @param repository The repository this object should inherit from.
      * @param creationParameters The creationParameters of the new object.
      */
-    public VirtualObject(Prototype prototype,
+    public VirtualObject(Repository repository,
     		Map<String, ? extends Object> creationParameters) {
-        setPrototype(prototype);
+        setRepository(repository);
         setCreationParameters(creationParameters);
     }
 
     /**
-     * Gets the {@link Prototype} this object was created from.
-     * @return the {@link Prototype}.
+     * Gets the {@link Repository} this object was created from.
+     * @return the {@link Repository}.
      */
-    public Prototype getPrototype() {
-        return prototype;
+    public Repository getRepository() {
+        return repository;
     }
 
     /**
-     * Sets the {@link Prototype} this object was created from.
-     * @param prototype The {@link Prototype}.
+     * Sets the {@link Repository} this object was created from.
+     * @param repository The {@link Repository}.
      */
-    public void setPrototype(Prototype prototype) {
-        this.prototype = prototype;
+    public void setRepository(Repository repository) {
+        this.repository = repository;
     }
 
     /**
@@ -63,7 +63,7 @@ public class VirtualObject {
     /**
      * Invokes a remotable method exposed within instances of this class on the
      * server.
-     * @param method The method to invoke (without the prototype), e.g.
+     * @param method The method to invoke (without the repository), e.g.
      * <code>"doSomething"</code>.
      * @param parameters The parameters to invoke with.
      * @param callback The callback to invoke when the execution finishes.
@@ -71,12 +71,12 @@ public class VirtualObject {
     public void invokeMethod(String method,
             Map<String, ? extends Object> parameters,
             Adapter.Callback callback) {
-        Adapter adapter = prototype.getAdapter();
+        Adapter adapter = repository.getAdapter();
         if (adapter == null) {
             throw new IllegalArgumentException(
-            		"Prototype adapter cannot be null");
+                    "Repository adapter cannot be null");
         }
-        String path = prototype.getClassName() + ".prototype." + method;
+        String path = repository.getClassName() + ".prototype." + method;
         adapter.invokeInstanceMethod(path, creationParameters, parameters,
         		callback);
     }

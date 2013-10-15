@@ -7,22 +7,22 @@ import java.util.Map;
 import com.strongloop.android.remoting.adapters.Adapter;
 
 /**
- * A local representative of classes ("prototypes" in JavaScript) defined and
- * made remotable on the server.
+ * A local representative of remote model repository, it provides
+ * access to static methods like <pre>User.findById()</pre>.
  */
-public class Prototype {
+public class Repository {
 
     private String className;
     private Adapter adapter;
 
     /**
-     * Creates a new Prototype, associating it with the named remote class.
+     * Creates a new Repository, associating it with the named remote class.
      * @param className The remote class name.
      */
-    public Prototype(String className) {
+    public Repository(String className) {
         if (className == null || className.length() == 0) {
             throw new IllegalArgumentException(
-            		"Class name cannot be null or empty.");
+                    "Class name cannot be null or empty.");
         }
         this.className = className;
     }
@@ -62,7 +62,7 @@ public class Prototype {
      * @return A new {@link VirtualObject} based on this prototype.
      */
     public VirtualObject createObject(
-    		Map<String, ? extends Object> creationParameters) {
+            Map<String, ? extends Object> creationParameters) {
         return new VirtualObject(this, creationParameters);
     }
 

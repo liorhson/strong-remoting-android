@@ -3,7 +3,7 @@ package com.strongloop.android.remoting.test;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.strongloop.android.remoting.Prototype;
+import com.strongloop.android.remoting.Repository;
 import com.strongloop.android.remoting.VirtualObject;
 import com.strongloop.android.remoting.adapters.RestAdapter;
 
@@ -19,7 +19,7 @@ public class RestAdapterTest extends AsyncTestCase {
     }
 
     private RestAdapter adapter;
-    private Prototype testClass;
+    private Repository testClass;
 
     @Override
     protected void setUp() throws Exception {
@@ -27,7 +27,7 @@ public class RestAdapterTest extends AsyncTestCase {
         // NOTE: "10.0.2.2" is the "localhost" of the Android emulator's
         // host computer.
         adapter = new RestAdapter(getActivity(), "http://10.0.2.2:3001");
-        testClass = new Prototype("SimpleClass");
+        testClass = new Repository("SimpleClass");
         testClass.setAdapter(adapter);
     }
 
