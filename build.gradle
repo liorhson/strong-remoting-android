@@ -1,4 +1,14 @@
+import java.text.SimpleDateFormat;
+import java.text.DateFormat;
+Calendar calendar = Calendar.getInstance();
+DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+
 group = 'com.strongloop';
+String buildID = System.getenv()['BUILD_ID']
+if (buildID == null){
+    buildID = dateFormat.format(calendar.getTime())
+}
+version = version + "-" +  buildID
 
 buildscript {
   repositories {
