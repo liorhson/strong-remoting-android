@@ -4,7 +4,7 @@ Calendar calendar = Calendar.getInstance();
 DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 
 group = 'com.strongloop';
-String buildID = System.getenv()['BUILD_ID']
+String buildID = System.getenv()['BUILD_NUMBER']
 if (buildID == null){
     buildID = dateFormat.format(calendar.getTime())
 }
