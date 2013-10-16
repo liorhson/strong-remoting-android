@@ -23,7 +23,7 @@ public class JsonUtil {
      * Converts a Java object to a JSON object. A {@link java.util.Map} is
      * converted to a {@link org.json.JSONObject}, a {@link java.util.List} or
      * array is converted to a {@link org.json.JSONArray},
-     * and <code>null</code> is converted to  {@link org.json.JSONObject.NULL}.
+     * and <code>null</code> is converted to  {@link org.json.JSONObject#NULL}.
      * Other objects, like {@link java.lang.Number}, {@link java.lang.String},
      * and {@link java.lang.Boolean} are returned without conversion.
      * @param object The object to convert.

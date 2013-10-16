@@ -6,11 +6,16 @@ buildscript {
       mavenCentral()
   }
   dependencies {
-      classpath 'com.android.tools.build:gradle:0.5.+'
+      // Note: 0.5.5 changed the way how tasks are initialized
+      // The new way makes it impossible to configure Javadoc artifact
+      // for the maven-publish plugin. We have to stay with 0.5.4 for now.
+      // See also the discussion in adt-dev: http://bit.ly/17IOTvG
+      classpath 'com.android.tools.build:gradle:0.5.4'
   }
 }
 
 apply plugin: 'android-library'
+apply plugin: 'maven-publish'
 
 repositories {
     mavenLocal()
@@ -45,12 +50,10 @@ task androidReleaseJar(type: Jar, dependsOn: assembleRelease) {
     from "$buildDir/classes/release/"
 }
 
-/* TODO
-task androidJavadocsJar(type: Jar) {
+task androidJavadocsJar(type: Jar, dependsOn: generateReleaseJavadoc) {
     classifier = 'javadoc'
-    from tasks["generateReleaseJavadoc"].destinationDir
+    from generateReleaseJavadoc.destinationDir
 }
-*/
 
 task androidSourcesJar(type: Jar) {
     classifier = 'sources'
@@ -60,18 +63,21 @@ task androidSourcesJar(type: Jar) {
 artifacts {
     archives androidReleaseJar
     archives androidSourcesJar
-/* TODO
     archives androidJavadocsJar
-*/
 }
 
-
-apply plugin: 'maven-publish'
 publishing {
     publications {
         maven(MavenPublication) {
             artifact androidReleaseJar
-            // TODO: sources, javadocs
+
+            artifact androidSourcesJar {
+                classifier 'sources'
+            }
+
+            artifact androidJavadocsJar {
+                classifier 'javadoc'
+            }
 
             pom.withXml {
                 def root = asNode()
