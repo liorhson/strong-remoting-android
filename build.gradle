@@ -117,3 +117,13 @@ publishing {
         }
     }
 }
+
+// Workaround for Jenkins-Artifactory plugin not picking up the POM file
+// from maven-publish
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask('artifactoryPublish')) {
+        artifactoryPublish {
+            publications('maven')
+        }
+    }
+}
