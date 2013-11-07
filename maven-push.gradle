@@ -1,0 +1,91 @@
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+configurations {
+    archives {
+        extendsFrom configurations.default
+    }
+}
+
+afterEvaluate { project ->
+    uploadArchives {
+
+        def sonatypeRepositoryUrl
+        if (isReleaseBuild()) {
+            println 'RELEASE BUILD'
+            sonatypeRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        } else {
+            println 'DEBUG BUILD'
+            sonatypeRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+
+        if (ext.properties.containsKey('signing.keyId') && !ext.properties.containsKey('signing.password')) {
+            if (System.console())
+                ext.set('signing.password', System.console().readPassword("\n\$ Type in GPG key password: "))
+            else
+                ext.set('signing.password', 'dummy')
+        }
+
+        if (!ext.properties.containsKey('nexusPassword')) {
+            if (System.console())
+                ext.set('nexusPassword', new String(System.console().readPassword("\n\$ Type in password for Sonatype nexus account ${nexusUsername}: ")))
+            else
+                ext.set('nexusPassword', 'dummy')
+        }
+
+        repositories {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                repository(url: sonatypeRepositoryUrl) {
+                    authentication(userName: nexusUsername, password: nexusPassword)
+                }
+
+                pom.withXml {
+                                def root = asNode()
+
+                                root.appendNode('packaging', 'jar');
+
+                                /*
+                                def deps = new Node(root, 'dependencies')
+                                configurations.compile.allDependencies.each { dep ->
+                                    def node = new Node(deps, 'dependency')
+                                    new Node(node, 'groupId', dep.group)
+                                    new Node(node, 'artifactId', dep.name)
+                                    new Node(node, 'version', dep.version);
+                                }
+                                */
+
+                                root.appendNode('name', 'strong-remoting-android')
+                                root.appendNode('description', 'Android client for strong-remoting')
+                                root.appendNode('url', 'https://github.com/strongloop/strong-remoting-android')
+
+                                def licenses = new Node(root, 'licenses');
+                                def lic = new Node(licenses, 'license');
+                                lic.appendNode('name', 'The MIT License')
+                                lic.appendNode('url', 'http://opensource.org/licenses/mit-license.php')
+                                lic.appendNode('distribution', 'repo')
+
+                                def scm = new Node(root, 'scm')
+                                scm.appendNode('connection', 'scm:git@github.com:strongloop/strong-remoting-android.git')
+                                scm.appendNode('developerConnection', 'scm:git@github.com:strongloop/strong-remoting-android.git')
+                                scm.appendNode('url', 'https://github.com/strongloop/strong-remoting-android')
+
+                                def devs = new Node(root, 'developers')
+                                def dev1 = new Node(devs, 'developer')
+                                dev1.appendNode('id', 'bajtos')
+                                dev1.appendNode('name', 'Miroslav Bajtos')
+                                dev1.appendNode('email', 'miroslav@strongloop.com')
+                                dev1.appendNode('organization', 'StrongLoop, Inc.')
+                                dev1.appendNode('organizationUrl', 'http://www.strongloop.com')
+                            }
+            }
+        }
+    }
+
+    signing {
+        required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
+}

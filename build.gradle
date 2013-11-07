@@ -128,3 +128,10 @@ publishing {
         archives pomFile
     }
 }
+
+
+def isReleaseBuild() {
+    return version.contains("SNAPSHOT") == false
+}
+
+apply from: './maven-push.gradle'
