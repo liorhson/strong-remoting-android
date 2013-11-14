@@ -3,24 +3,29 @@ group = 'com.strongloop';
 buildscript {
   repositories {
       mavenCentral()
+      maven {
+        url "http://artifactory.strongloop.com:8081/artifactory/android-maven-plugin/"
+      }
   }
   dependencies {
       classpath 'com.android.tools.build:gradle:0.6.+'
+      classpath 'org.gradle.api.plugins:android-maven-plugin:1.0-SNAPSHOT'
   }
 }
 
-apply plugin: 'maven'
 apply plugin: 'android-library'
+apply plugin: 'android-maven'
+apply plugin: 'signing'
 
+def sonatypeRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+def isJenkinsBuild = System.getenv("BUILD_NUMBER")
+def isReleaseBuild = !version.contains("SNAPSHOT")
+def shouldPublishToMavenCentral = isReleaseBuild
 def mavenLocalUrl
 
 repositories {
-    def local = mavenLocal();
+    mavenLocal();
     mavenCentral()
-
-    // Save MavenLocal url, we will use it later
-    // to configure uploadArchives
-    mavenLocalUrl = local.url
 }
 
 android {
@@ -79,11 +84,17 @@ afterEvaluate { project ->
     uploadArchives {
         repositories {
             mavenDeployer {
-                if (System.getenv("BUILD_NUMBER")) {
-                    // running on Jenkins
-                } else {
-                    // local build - publish to Maven local cache
-                    repository(url: mavenLocalUrl)
+                if (shouldPublishToMavenCentral) {
+                    beforeDeployment { MavenDeployment deployment ->
+                        signing.signPom(deployment)
+                    }
+
+                    repository(url: sonatypeRepositoryUrl) {
+                        authentication(
+                            userName: sonatypeUserName,
+                            password: sonatypePassword);
+                    }
+
                 }
 
                 pom.project {
@@ -115,7 +126,33 @@ afterEvaluate { project ->
                         }
                     }
                 }
+
+                pom.withXml {
+                    def root = asNode()
+                    root.appendNode('packaging', 'jar');
+                }
             }
         }
     }
+
+    // Task for Jenkins build that will conditionally
+    // call uploadArchives, but only if there is something
+    // to upload
+    task publishToMavenCentral {
+      if (shouldPublishToMavenCentral)
+          dependsOn uploadArchives
+    }
+
+    if (shouldPublishToMavenCentral) {
+        signing {
+            required {
+                gradle.taskGraph.hasTask("uploadArchives")
+            }
+            sign configurations.archives
+        }
+    }
+}
+
+// legacy task required by old Jenkins config
+task generatePomFileForMavenPublication {
 }
