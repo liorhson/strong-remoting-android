@@ -152,7 +152,3 @@ afterEvaluate { project ->
         }
     }
 }
-
-// legacy task required by old Jenkins config
-task generatePomFileForMavenPublication {
-}
