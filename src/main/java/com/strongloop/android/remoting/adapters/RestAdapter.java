@@ -243,7 +243,11 @@ public class RestAdapter extends Adapter {
                     if (LOG) {
                         Log.i("RestAdapter", "Success: " + response);
                     }
-                    callback.onSuccess(response);
+                    try {
+                        callback.onSuccess(response);
+                    } catch (Throwable t) {
+                        callback.onError(t);
+                    }
                 }
 
                 @Override
