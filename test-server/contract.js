@@ -20,7 +20,39 @@ transform.accepts = [{ arg: 'str', type: 'string' }];
 transform.returns = [{ arg: 'data', type: 'string' }];
 transform.http = { path: '/customizedTransform', verb: 'GET' };
 
+/**
+ * Takes a GeoPoint and returns back latitude and longitude
+ */
+function geopoint(here, callback) {
+  callback(null, here.lat, here.lng);
+}
+
+geopoint.shared = true;
+geopoint.accepts = [ {arg: 'here', type: 'GeoPoint', required: true }];
+geopoint.returns = [
+  {arg: 'lat', type: 'number'},
+  {arg: 'lng', type: 'number'}
+];
+geopoint.http = { path: '/geopoint', verb: 'GET' };
+
+/**
+ * A stub for a listing function accepting a filter like
+ *   ?filter=where[effectiveRange][gt]=900
+ * This method returns back the filter object as JSON.
+ *   { data: "{\"where\":{\"age\":{\"gt\":21}}}" }
+ */
+function list(filter, callback) {
+  callback(null, JSON.stringify(filter));
+}
+
+list.shared = true;
+list.accepts = [{ arg: 'filter', type: 'object', require: true }];
+list.returns = [{ arg: 'data', type: 'string' }];
+list.http = { path: '/list', verb: 'GET' };
+
 module.exports = {
   getSecret: getSecret,
-  transform: transform
+  transform: transform,
+  geopoint: geopoint,
+  list: list
 };

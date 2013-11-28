@@ -263,8 +263,9 @@ public class RestAdapter extends Adapter {
                 if ("GET".equalsIgnoreCase(method) ||
                 		"HEAD".equalsIgnoreCase(method) ||
                 		"DELETE".equalsIgnoreCase(method)) {
+
                     for (Map.Entry<String, ? extends Object> entry :
-                    	parameters.entrySet()) {
+                            buildUrlQueryParameters(parameters).entrySet()) {
                         uri.appendQueryParameter(entry.getKey(),
                         		String.valueOf(entry.getValue()));
                     }
@@ -337,6 +338,41 @@ public class RestAdapter extends Adapter {
                 throw new IllegalArgumentException("Illegal method: " +
                 		method + ". Only GET, POST, PUT, DELETE supported.");
             }
+        }
+
+        private Map<String, Object> buildUrlQueryParameters(
+                final Map<String, ? extends Object> parameters) {
+            return buildUrlQueryParameters(null, parameters);
+        }
+
+        @SuppressWarnings("unchecked")
+        private Map<String, Object> buildUrlQueryParameters(
+                final String keyPrefix,
+                final Map<String, ? extends Object> parameters) {
+
+            // This method converts nested maps into a flat list
+            //   Input:  { "here": { "lat": 10, "lng": 20 }
+            //   Output: { "here[lat]": 10, "here[lng]": 20 }
+
+            Map<String, Object> result = new HashMap<String, Object>();
+
+            for (Map.Entry<String, ? extends Object> entry
+                    : parameters.entrySet()) {
+
+                String key = keyPrefix != null
+                        ? keyPrefix + "[" + entry.getKey() + "]"
+                        : entry.getKey();
+
+                Object value = entry.getValue();
+
+                if (value instanceof Map) {
+                    result.putAll(buildUrlQueryParameters(key, (Map)value));
+                } else {
+                    result.put(key, value);
+                }
+            }
+
+            return result;
         }
     }
 }
