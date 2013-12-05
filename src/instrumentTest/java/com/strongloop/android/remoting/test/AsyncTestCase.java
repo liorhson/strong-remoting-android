@@ -17,6 +17,16 @@ public class AsyncTestCase extends ActivityTestCase {
     public abstract class AsyncTest implements Runnable {
 
         private CountDownLatch signal;
+        private Throwable failException;
+
+        public Throwable getFailException() {
+            return failException;
+        }
+
+        public void notifyFailed(Throwable reason) {
+            failException = reason;
+            notifyFinished();
+        }
 
         public void notifyFinished() {
             signal.countDown();
@@ -44,8 +54,7 @@ public class AsyncTestCase extends ActivityTestCase {
 
             @Override
             public void onError(Throwable t) {
-                fail(t.getMessage());
-                notifyFinished();
+                notifyFailed(t);
             }
 
             @Override
@@ -63,10 +72,13 @@ public class AsyncTestCase extends ActivityTestCase {
         runTestOnUiThread(runner);
 
         boolean success = runner.await();
-        assertTrue(success);
         if (runner.getUncaughtException() != null) {
             throw runner.getUncaughtException();
         }
+        if (asyncTest.getFailException() != null) {
+            throw asyncTest.getFailException();
+        }
+        assertTrue("Test should have finished in 30 seconds.", success);
     }
 
     private static class TestRunner implements Runnable {

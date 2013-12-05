@@ -3,11 +3,15 @@ package com.strongloop.android.remoting.test;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
 import com.strongloop.android.remoting.Repository;
 import com.strongloop.android.remoting.VirtualObject;
+import com.strongloop.android.remoting.adapters.Adapter;
 import com.strongloop.android.remoting.adapters.RestAdapter;
 import com.strongloop.android.remoting.adapters.RestContract;
 import com.strongloop.android.remoting.adapters.RestContractItem;
+
+import org.json.JSONObject;
 
 public class RestContractTest extends AsyncTestCase {
 
@@ -30,16 +34,24 @@ public class RestContractTest extends AsyncTestCase {
         // host computer.
         adapter = new RestAdapter(getActivity(), "http://10.0.2.2:3001");
 
-        adapter.getContract().addItem(
+        final RestContract contract = adapter.getContract();
+
+        contract.addItem(
                 new RestContractItem("/contract/customizedGetSecret", "GET"),
                 "contract.getSecret");
-        adapter.getContract().addItem(
+        contract.addItem(
                 new RestContractItem("/contract/customizedTransform", "GET"),
                 "contract.transform");
-        adapter.getContract().addItem(
+        contract.addItem(
+                new RestContractItem("/contract/geopoint", "GET"),
+                "contract.geopoint");
+        contract.addItem(
+                new RestContractItem("/contract/list", "GET"),
+                "contract.list");
+        contract.addItem(
                 new RestContractItem("/ContractClass/:name/getName", "POST"),
                 "ContractClass.prototype.getName");
-        adapter.getContract().addItem(
+        contract.addItem(
                 new RestContractItem("/ContractClass/:name/greet", "POST"),
                 "ContractClass.prototype.greet");
 
@@ -153,6 +165,60 @@ public class RestContractTest extends AsyncTestCase {
                 test.invokeMethod("greet",
                         param("other", "othername"),
                         expectJsonResponse("Hi, othername!"));
+            }
+        });
+    }
+
+    public void testNestedParameterObjectsAreFlattened() throws Throwable {
+        doAsyncTest(new AsyncTest() {
+            @Override
+            public void run() {
+                adapter.invokeStaticMethod(
+                        "contract.geopoint",
+                        ImmutableMap.of(
+                                "here",
+                                ImmutableMap.of(
+                                        "lat", 10,
+                                        "lng", 20
+                                )
+                        ),
+                        new Adapter.JsonObjectCallback() {
+                            @Override
+                            public void onSuccess(JSONObject response) {
+                                assertEquals("lat", 10, response.opt("lat"));
+                                assertEquals("lng", 20, response.opt("lng"));
+                                notifyFinished();
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                notifyFailed(t);
+                            }
+                        }
+                );
+            }
+        });
+    }
+
+    public void testDeeplyNestedParameterObjectsAreFlattened() throws Throwable {
+        // In this test, we do not check for the exact value of query-string,
+        // but ensure that the value created by the android library
+        // is correctly parsed by the strong-remoting server.
+        // This way the test stays relevant (and passing) even if
+        // the query-string format changes in the future.
+        doAsyncTest(new AsyncTest() {
+            @Override
+            public void run() {
+                final Map filter =
+                        ImmutableMap.of("where",
+                            ImmutableMap.of("age",
+                                    ImmutableMap.of("gt", 21)));
+
+                adapter.invokeStaticMethod(
+                        "contract.list",
+                        ImmutableMap.of("filter", filter),
+                        expectJsonResponse("{\"where\":{\"age\":{\"gt\":21}}}")
+                );
             }
         });
     }
