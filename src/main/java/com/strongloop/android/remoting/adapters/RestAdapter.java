@@ -57,6 +57,13 @@ public class RestAdapter extends Adapter {
     }
 
     /**
+     * Get the underlying HTTP client. This allows subclasses to add
+     * custom headers like Authorization.
+     * @return the client.
+     */
+    protected AsyncHttpClient getClient() { return client; }
+
+    /**
      * Sets this adapter's {@link RestContract}, a custom contract for
      * fine-grained route configuration.
      * @param contract The contract.
