@@ -19,6 +19,25 @@ import android.content.Context;
 public abstract class Adapter {
 
     /**
+     * A callback receiving the HTTP response body in the binary
+     * form.
+     */
+    public interface BinaryCallback {
+
+        /**
+         * The method invoked when the call completes successfully.
+         * @param response The response body.
+         */
+        public void onSuccess(byte[] response);
+
+        /**
+         * The method invoked when an error occurs.
+         * @param t The Throwable.
+         */
+        public void onError(Throwable t);
+    }
+
+    /**
      * A callback that returns the HTTP response body.
      */
     public interface Callback {
@@ -26,9 +45,8 @@ public abstract class Adapter {
         /**
          * The method invoked when the call completes successfully.
          * @param response The HTTP response body.
-         * @param data - optional 0-n number of data returned
          */
-        public void onSuccess(String response, Object...data);
+        public void onSuccess(String response);
 
         /**
          * The method invoked when an error occurs.
@@ -53,7 +71,7 @@ public abstract class Adapter {
         public abstract void onSuccess(Object response);
 
         @Override
-        public void onSuccess(String response, Object...data) {
+        public void onSuccess(String response) {
         	if (response == null) {
         		onError(new JSONException("Invalid null response"));
         	}
@@ -171,6 +189,24 @@ public abstract class Adapter {
     		Map<String, ? extends Object> parameters, Callback callback);
 
     /**
+     * Invokes a remotable method exposed statically on the server,
+     * parses the response as binary data.
+     * <p>
+     * Unlike {@link #invokeInstanceMethod(String, Map, Map, BinaryCallback)}, no
+     * object needs to be created on the server.
+     * @param method The method to invoke, e.g.
+     * 		<code>"module.doSomething"</code>.
+     * @param parameters The parameters to invoke with.
+     * @param callback The callback to invoke when the execution finishes.
+     */
+    public void invokeStaticMethod(String method,
+                                   Map<String, ? extends Object> parameters,
+                                   BinaryCallback callback) {
+        throw new UnsupportedOperationException(
+                getClass().getName() + " does not support binary responses.");
+    }
+
+    /**
      * Invokes a remotable method exposed within a prototype on the server.
      * <p>
      * This should be thought of as a two-step process. First, the server loads
@@ -189,5 +225,30 @@ public abstract class Adapter {
     public abstract void invokeInstanceMethod(String method,
     		Map<String, ? extends Object> constructorParameters,
     		Map<String, ? extends Object> parameters, Callback callback);
+
+    /**
+     * Invokes a remotable method exposed within a prototype on the server,
+     * parses the response as binary data.
+     * <p>
+     * This should be thought of as a two-step process. First, the server loads
+     * or creates an object with the appropriate type. Then and only then is
+     * the method invoked on that object. The two parameter dictionaries
+     * correspond to these two steps: `creationParameters` for the former, and
+     * `parameters` for the latter.
+     *
+     * @param method The method to invoke, e.g.
+     * 		<code>"MyClass.prototype.doSomething"</code>.
+     * @param constructorParameters The parameters the virtual object should be
+     * created with.
+     * @param parameters The parameters to invoke with.
+     * @param callback The callback to invoke when the execution finishes.
+     */
+    public void invokeInstanceMethod(String method,
+                                     Map<String, ? extends Object> constructorParameters,
+                                     Map<String, ? extends Object> parameters,
+                                     BinaryCallback callback) {
+        throw new UnsupportedOperationException(
+                getClass().getName() + " does not support binary responses.");
+    }
 
 }

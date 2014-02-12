@@ -103,19 +103,21 @@ public class RestContract {
     }
 
     /**
-     * Gets a boolean to indicate if the item is a multipart form mime type
-     * or not.
+     * Gets the ParameterEncoding for the given method.
+     *
      * @param method The method to resolve.
-     * @return A boolean indicating multipart or not.
+     * @return The parameter encoding.
      */
-    public boolean getIsMultipartForMethod(String method) {
+    public RestAdapter.ParameterEncoding getParameterEncodingForMethod(String method) {
         if (method == null) {
             throw new IllegalArgumentException("Method cannot be null");
         }
 
         RestContractItem item = items.get(method);
 
-        return item != null ? item.getIsMultipart() : false;
+        return item != null
+                ? item.getParameterEncoding()
+                : RestAdapter.ParameterEncoding.JSON;
     }
 
     /**

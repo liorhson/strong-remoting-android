@@ -8,7 +8,7 @@ public class RestContractItem {
 
     private final String pattern;
     private final String verb;
-    private final boolean isMultipart;
+    private final RestAdapter.ParameterEncoding parameterEncoding;
 
     /**
      * Creates a new item encapsulating the given pattern and the default verb,
@@ -27,23 +27,30 @@ public class RestContractItem {
      * @param verb The verb corresponding to this route, e.g.
      * <code>"GET"</code>.
      */
-    public RestContractItem(String pattern, String verb, boolean isMultipart) {
-        this.pattern = pattern;
-        this.verb = verb;
-        this.isMultipart = isMultipart;
+    public RestContractItem(String pattern, String verb) {
+        this(pattern, verb, RestAdapter.ParameterEncoding.JSON);
     }
 
     /**
-     * Creates a new item encapsulating the given pattern and verb.
+     * Creates a new item encapsulating a route that expects multi-part request
+     * (e.g. file upload).
      * @param pattern The pattern corresponding to this route, e.g.
-     * <code>"/widgets/:id"</code>.
+     * <code>"/files/:id"</code>.
      * @param verb The verb corresponding to this route, e.g.
-     * <code>"GET"</code>.
+     * <code>"POST"</code>.
+     * @return The RestContractItem created.
      */
-    public RestContractItem(String pattern, String verb) {
+    public static RestContractItem createMultipart(String pattern, String verb) {
+        return new RestContractItem(pattern, verb,
+                RestAdapter.ParameterEncoding.FORM_MULTIPART);
+    }
+
+    private RestContractItem(String pattern,
+                             String verb,
+                             RestAdapter.ParameterEncoding parameterEncoding) {
         this.pattern = pattern;
         this.verb = verb;
-        this.isMultipart = false;
+        this.parameterEncoding = parameterEncoding;
     }
 
     /**
@@ -67,7 +74,7 @@ public class RestContractItem {
      * Gets a boolean that indicates if the item is a multipart form mime type.
      * @return true if the item is multipart
      */
-    public boolean getIsMultipart() {
-        return isMultipart;
+    public RestAdapter.ParameterEncoding getParameterEncoding() {
+        return parameterEncoding;
     }
 }
