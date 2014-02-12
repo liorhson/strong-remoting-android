@@ -80,4 +80,26 @@ public class VirtualObject {
         adapter.invokeInstanceMethod(path, creationParameters, parameters,
         		callback);
     }
+
+    /**
+     * Invokes a remotable method exposed within instances of this class on the
+     * server,
+     * parses the response as binary data.
+     * @param method The method to invoke (without the repository), e.g.
+     * <code>"doSomething"</code>.
+     * @param parameters The parameters to invoke with.
+     * @param callback The callback to invoke when the execution finishes.
+     */
+    public void invokeMethod(String method,
+                             Map<String, ? extends Object> parameters,
+                             Adapter.BinaryCallback callback) {
+        Adapter adapter = repository.getAdapter();
+        if (adapter == null) {
+            throw new IllegalArgumentException(
+                    "Repository adapter cannot be null");
+        }
+        String path = repository.getClassName() + ".prototype." + method;
+        adapter.invokeInstanceMethod(path, creationParameters, parameters,
+                callback);
+    }
 }
