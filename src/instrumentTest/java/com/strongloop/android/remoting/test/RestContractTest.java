@@ -14,6 +14,9 @@ import com.strongloop.android.remoting.adapters.RestContractItem;
 import org.json.JSONObject;
 
 public class RestContractTest extends AsyncTestCase {
+    // NOTE: "10.0.2.2" is the "localhost" of the Android emulator's
+    // host computer.
+    static final String SERVER_URL ="http://10.0.2.2:3001";
 
     /**
      * Convenience method to create a single-entry Map.
@@ -30,9 +33,7 @@ public class RestContractTest extends AsyncTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        // NOTE: "10.0.2.2" is the "localhost" of the Android emulator's
-        // host computer.
-        adapter = new RestAdapter(getActivity(), "http://10.0.2.2:3001");
+        adapter = new RestAdapter(getActivity(), SERVER_URL);
 
         final RestContract contract = adapter.getContract();
 
@@ -219,6 +220,26 @@ public class RestContractTest extends AsyncTestCase {
                         ImmutableMap.of("filter", filter),
                         expectJsonResponse("{\"where\":{\"age\":{\"gt\":21}}}")
                 );
+            }
+        });
+    }
+
+    public void testCustomRequestHeader() throws Throwable {
+        doAsyncTest(new AsyncTest() {
+            @Override
+            public void run() {
+                RestAdapter customAdapter = new RestAdapter(getActivity(), SERVER_URL) {
+                    {
+                        this.getClient().addHeader("Authorization", "auth-token");
+                    }
+                };
+                customAdapter.getContract().addItem(
+                        new RestContractItem("/contract/get-auth", "GET"),
+                        "contract.getAuthorizationHeader");
+                customAdapter.invokeStaticMethod(
+                        "contract.getAuthorizationHeader",
+                        new HashMap<String, Object>(),
+                        expectJsonResponse("auth-token"));
             }
         });
     }

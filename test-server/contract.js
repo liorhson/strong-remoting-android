@@ -50,9 +50,21 @@ list.accepts = [{ arg: 'filter', type: 'object', require: true }];
 list.returns = [{ arg: 'data', type: 'string' }];
 list.http = { path: '/list', verb: 'GET' };
 
+function getAuthorizationHeader(auth, cb) {
+    cb(null, auth);
+}
+
+getAuthorizationHeader.shared = true;
+getAuthorizationHeader.accepts = [{ arg: 'auth', type: 'string', http: function(ctx) {
+    return ctx.req.header('authorization');
+}}];
+getAuthorizationHeader.returns = [{ arg: 'data', type: 'string' }];
+getAuthorizationHeader.http = { path: '/get-auth' };
+
 module.exports = {
   getSecret: getSecret,
   transform: transform,
   geopoint: geopoint,
+  getAuthorizationHeader: getAuthorizationHeader,
   list: list
 };
