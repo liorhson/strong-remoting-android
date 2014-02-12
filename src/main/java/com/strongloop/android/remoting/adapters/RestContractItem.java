@@ -8,6 +8,7 @@ public class RestContractItem {
 
     private final String pattern;
     private final String verb;
+    private final RestAdapter.ParameterEncoding parameterEncoding;
 
     /**
      * Creates a new item encapsulating the given pattern and the default verb,
@@ -27,8 +28,29 @@ public class RestContractItem {
      * <code>"GET"</code>.
      */
     public RestContractItem(String pattern, String verb) {
+        this(pattern, verb, RestAdapter.ParameterEncoding.JSON);
+    }
+
+    /**
+     * Creates a new item encapsulating a route that expects multi-part request
+     * (e.g. file upload).
+     * @param pattern The pattern corresponding to this route, e.g.
+     * <code>"/files/:id"</code>.
+     * @param verb The verb corresponding to this route, e.g.
+     * <code>"POST"</code>.
+     * @return The RestContractItem created.
+     */
+    public static RestContractItem createMultipart(String pattern, String verb) {
+        return new RestContractItem(pattern, verb,
+                RestAdapter.ParameterEncoding.FORM_MULTIPART);
+    }
+
+    private RestContractItem(String pattern,
+                             String verb,
+                             RestAdapter.ParameterEncoding parameterEncoding) {
         this.pattern = pattern;
         this.verb = verb;
+        this.parameterEncoding = parameterEncoding;
     }
 
     /**
@@ -46,5 +68,13 @@ public class RestContractItem {
      */
     public String getVerb() {
         return verb;
+    }
+
+    /**
+     * Gets a boolean that indicates if the item is a multipart form mime type.
+     * @return true if the item is multipart
+     */
+    public RestAdapter.ParameterEncoding getParameterEncoding() {
+        return parameterEncoding;
     }
 }

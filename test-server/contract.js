@@ -61,10 +61,18 @@ getAuthorizationHeader.accepts = [{ arg: 'auth', type: 'string', http: function(
 getAuthorizationHeader.returns = [{ arg: 'data', type: 'string' }];
 getAuthorizationHeader.http = { path: '/get-auth' };
 
+function binary(res) {
+  res.type('application/octet-stream');
+  res.send(200, new Buffer('010203', 'hex'));
+}
+binary.shared = true;
+binary.accepts = [{arg: 'res', type: 'object', 'http': {source: 'res'}}];
+
 module.exports = {
   getSecret: getSecret,
   transform: transform,
   geopoint: geopoint,
   getAuthorizationHeader: getAuthorizationHeader,
+  binary: binary,
   list: list
 };

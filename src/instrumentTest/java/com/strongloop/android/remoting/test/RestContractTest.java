@@ -1,7 +1,6 @@
 package com.strongloop.android.remoting.test;
 
-import java.util.HashMap;
-import java.util.Map;
+import android.test.MoreAsserts;
 
 import com.google.common.collect.ImmutableMap;
 import com.strongloop.android.remoting.Repository;
@@ -12,6 +11,9 @@ import com.strongloop.android.remoting.adapters.RestContract;
 import com.strongloop.android.remoting.adapters.RestContractItem;
 
 import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RestContractTest extends AsyncTestCase {
     // NOTE: "10.0.2.2" is the "localhost" of the Android emulator's
@@ -55,6 +57,9 @@ public class RestContractTest extends AsyncTestCase {
         contract.addItem(
                 new RestContractItem("/ContractClass/:name/greet", "POST"),
                 "ContractClass.prototype.greet");
+        contract.addItem(
+                new RestContractItem("/contract/binary", "GET"),
+                "contract.binary");
 
         testClass = new Repository("ContractClass");
         testClass.setAdapter(adapter);
@@ -240,6 +245,28 @@ public class RestContractTest extends AsyncTestCase {
                         "contract.getAuthorizationHeader",
                         new HashMap<String, Object>(),
                         expectJsonResponse("auth-token"));
+            }
+        });
+    }
+
+    public void testBinaryResponseBody() throws Throwable {
+        doAsyncTest(new AsyncTest() {
+            @Override
+            public void run() {
+                adapter.invokeStaticMethod("contract.binary", null,
+                        new Adapter.BinaryCallback() {
+                            @Override
+                            public void onSuccess(byte[] response) {
+                                // The value is hard-coded in test-server/contract.js
+                                MoreAsserts.assertEquals(new byte[]{1, 2, 3}, response);
+                                notifyFinished();
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                notifyFailed(t);
+                            }
+                        });
             }
         });
     }

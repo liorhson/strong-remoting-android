@@ -103,6 +103,24 @@ public class RestContract {
     }
 
     /**
+     * Gets the ParameterEncoding for the given method.
+     *
+     * @param method The method to resolve.
+     * @return The parameter encoding.
+     */
+    public RestAdapter.ParameterEncoding getParameterEncodingForMethod(String method) {
+        if (method == null) {
+            throw new IllegalArgumentException("Method cannot be null");
+        }
+
+        RestContractItem item = items.get(method);
+
+        return item != null
+                ? item.getParameterEncoding()
+                : RestAdapter.ParameterEncoding.JSON;
+    }
+
+    /**
      * Resolves a specific method, replacing pattern fragments with the optional
      * parameters as appropriate.
      * @param method The method to resolve.
