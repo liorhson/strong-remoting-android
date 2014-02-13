@@ -2,6 +2,7 @@
 
 package com.strongloop.android.remoting;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.strongloop.android.remoting.adapters.Adapter;
@@ -15,6 +16,13 @@ public class VirtualObject {
 
     private Repository repository;
     private Map<String, ? extends Object> creationParameters;
+
+    /**
+     * Creates a new object not attached to any repository.
+     */
+    public VirtualObject() {
+        this(null, null);
+    }
 
     /**
      * Creates a new object from the given repository and parameters.
@@ -58,6 +66,15 @@ public class VirtualObject {
     public void setCreationParameters(
     		Map<String, ? extends Object> creationParameters) {
         this.creationParameters = creationParameters;
+    }
+
+
+    /**
+     * Converts the object (and all of its Java Bean properties) into a
+     * {@link java.util.Map}.
+     */
+    public Map<String, ? extends Object> toMap() {
+        return BeanUtil.getProperties(this, false, false);
     }
 
     /**
