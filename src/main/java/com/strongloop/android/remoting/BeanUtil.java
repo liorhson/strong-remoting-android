@@ -1,5 +1,7 @@
 package com.strongloop.android.remoting;
 
+import android.util.Log;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -18,43 +20,46 @@ public class BeanUtil {
         for (Map.Entry<String, ? extends Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            if (key != null && key.length() > 0) {
-                String setterName = "set" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
-                Method setter = null;
+            if (key == null) continue;
+            if (key.length() == 0) continue;
 
-                // Try to use the exact setter
-                if (value != null) {
-                    try {
-                        if (includeSuperClasses) {
-                            setter = objectClass.getMethod(setterName, value.getClass());
-                        }
-                        else {
-                            setter = objectClass.getDeclaredMethod(setterName, value.getClass());
-                        }
+            String setterName = "set" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
+            Method setter = null;
+
+            // Try to use the exact setter
+            if (value != null) {
+                try {
+                    if (includeSuperClasses) {
+                        setter = objectClass.getMethod(setterName, value.getClass());
+                    } else {
+                        setter = objectClass.getDeclaredMethod(setterName, value.getClass());
                     }
-                    catch (Exception ex) { }
+                } catch (Exception ex) {
                 }
+            }
 
-                // Find a more generic setter
-                if (setter == null) {
-                    Method[] methods = includeSuperClasses ? objectClass.getMethods() : objectClass.getDeclaredMethods();
-                    for (Method method : methods) {
-                        if (method.getName().equals(setterName)) {
-                            Class<?>[] parameterTypes = method.getParameterTypes();
-                            if (parameterTypes.length == 1 && isAssignableFrom(parameterTypes[0], value)) {
-                                setter = method;
-                                break;
-                            }
+            // Find a more generic setter
+            if (setter == null) {
+                Method[] methods = includeSuperClasses ? objectClass.getMethods() : objectClass.getDeclaredMethods();
+                for (Method method : methods) {
+                    if (method.getName().equals(setterName)) {
+                        Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 1 && isAssignableFrom(parameterTypes[0], value)) {
+                            setter = method;
+                            break;
                         }
                     }
                 }
+            }
 
-                // Invoke
-                if (setter != null) {
-                    try {
-                        setter.invoke(object, value);
-                    }
-                    catch (Exception e) { }
+            // Invoke
+            if (setter != null) {
+                if (setter.getAnnotation(Transient.class) != null) continue;
+
+                try {
+                    setter.invoke(object, value);
+                } catch (Exception e) {
+                    Log.e("BeanUtil", setterName + "() failed", e);
                 }
             }
         }
@@ -69,56 +74,54 @@ public class BeanUtil {
         Class<?> objectClass = object.getClass();
         Method[] methods = includeSuperClasses ? objectClass.getMethods() : objectClass.getDeclaredMethods();
         for (Method method : methods) {
-            if (method.getParameterTypes().length == 0 && !method.getReturnType().equals(Void.TYPE)) {
-                String methodName = method.getName();
-                String propertyName = "";
-                if (methodName.startsWith("get")) {
-                    propertyName = methodName.substring(3);
-                }
-                else if (methodName.startsWith("is")) {
-                    propertyName = methodName.substring(2);
-                }
-                if (propertyName.length() > 0 && Character.isUpperCase(propertyName.charAt(0))) {
-                    propertyName = Character.toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
+            if (method.getDeclaringClass() == java.lang.Object.class) continue;
+            if (method.getParameterTypes().length > 0) continue;
+            if (method.getReturnType().equals(Void.TYPE)) continue;
+            if (method.getAnnotation(Transient.class) != null) continue;
 
-                    Object value = null;
-                    try {
-                        value = method.invoke(object);
-                    }
-                    catch (Exception e) { }
+            String methodName = method.getName();
+            String propertyName = "";
+            if (methodName.startsWith("get")) {
+                propertyName = methodName.substring(3);
+            } else if (methodName.startsWith("is")) {
+                propertyName = methodName.substring(2);
+            }
+            if (propertyName.length() > 0 && Character.isUpperCase(propertyName.charAt(0))) {
+                propertyName = Character.toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
 
-                    if (!deepCopy) {
+                Object value = null;
+                try {
+                    value = method.invoke(object);
+                } catch (Exception e) {
+                    Log.e("BeanUtil", method.getName() + "() failed", e);
+                }
+
+                if (!deepCopy) {
+                    map.put(propertyName, value);
+                } else {
+                    if (isSimpleObject(value)) {
                         map.put(propertyName, value);
-                    }
-                    else {
-                        if (isSimpleObject(value)) {
-                            map.put(propertyName, value);
+                    } else if (value instanceof Map) {
+                        Map<String, Object> submap = new HashMap<String, Object>();
+                        for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
+                            submap.put(String.valueOf(entry.getKey()), convertObject(entry.getValue(), includeSuperClasses));
                         }
-                        else if (value instanceof Map) {
-                            Map<String, Object> submap = new HashMap<String, Object>();
-                            for (Map.Entry<?, ?> entry : ((Map<?, ?>)value).entrySet()) {
-                                submap.put(String.valueOf(entry.getKey()), convertObject(entry.getValue(), includeSuperClasses));
-                            }
-                            map.put(propertyName, submap);
+                        map.put(propertyName, submap);
+                    } else if (value instanceof Iterable) {
+                        List<Object> sublist = new ArrayList<Object>();
+                        for (Object v : (Iterable<?>) object) {
+                            sublist.add(convertObject(v, includeSuperClasses));
                         }
-                        else if (value instanceof Iterable) {
-                            List<Object> sublist = new ArrayList<Object>();
-                            for (Object v : (Iterable<?>)object) {
-                                sublist.add(convertObject(v, includeSuperClasses));
-                            }
-                            map.put(propertyName, sublist);
+                        map.put(propertyName, sublist);
+                    } else if (value.getClass().isArray()) {
+                        List<Object> sublist = new ArrayList<Object>();
+                        int length = Array.getLength(value);
+                        for (int i = 0; i < length; i++) {
+                            sublist.add(convertObject(Array.get(value, i), includeSuperClasses));
                         }
-                        else if (value.getClass().isArray()) {
-                            List<Object> sublist = new ArrayList<Object>();
-                            int length = Array.getLength(value);
-                            for (int i = 0; i < length; i++) {
-                                sublist.add(convertObject(Array.get(value, i), includeSuperClasses));
-                            }
-                            map.put(propertyName, sublist);
-                        }
-                        else {
-                            map.put(propertyName, getProperties(value, includeSuperClasses, deepCopy));
-                        }
+                        map.put(propertyName, sublist);
+                    } else {
+                        map.put(propertyName, getProperties(value, includeSuperClasses, deepCopy));
                     }
                 }
             }

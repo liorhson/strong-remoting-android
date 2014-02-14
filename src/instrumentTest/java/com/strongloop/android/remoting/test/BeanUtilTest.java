@@ -1,8 +1,12 @@
 package com.strongloop.android.remoting.test;
 
+import android.test.MoreAsserts;
+
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.strongloop.android.remoting.BeanUtil;
 import com.strongloop.android.remoting.Repository;
+import com.strongloop.android.remoting.Transient;
 import com.strongloop.android.remoting.VirtualObject;
 
 import junit.framework.TestCase;
@@ -118,6 +122,16 @@ public class BeanUtilTest extends TestCase {
         }
     }
 
+    public static class Trans extends VirtualObject {
+        private String trans;
+
+        @Transient
+        public String getTrans() { return trans; }
+
+        @Transient
+        public void setTrans(String trans) { this.trans = trans; }
+    }
+
     public void testBean() {
         Bean fromBean = new Bean();
         fromBean.setName("Fred");
@@ -152,6 +166,24 @@ public class BeanUtilTest extends TestCase {
         assertEquals(fromBean, bean3);
     }
 
+    public void testTransient() {
+        Trans source = new Trans();
+        source.setTrans("transient value");
+
+        Map<String, Object> properties = BeanUtil.getProperties(source, false, true);
+        MoreAsserts.assertEquals(
+                "getProperties() should have ignored @Transient properties",
+                new HashMap<String, Object>().entrySet(), properties.entrySet());
+
+        properties.put("trans", source.getTrans());
+
+        Trans target = new Trans();
+        BeanUtil.setProperties(target, properties, true);
+        assertNull(
+                "setProperties() should have ignored @Transient properties",
+                target.getTrans());
+    }
+
     public void testGetPropertiesReturnsOwnPropertiesOnly() {
         Bean bean = new Bean();
         Map<String, Object> ownProperties = BeanUtil.getProperties(bean,
@@ -161,5 +193,10 @@ public class BeanUtilTest extends TestCase {
                 ImmutableSet.of("score", "totallyCool", "weight",
                         "name", "answerToAgeOfUniverse", "age"),
                 ownProperties.keySet());
+    }
+
+    public void testVirtualObjectHasTransientPropertiesOnly() {
+        VirtualObject obj = new VirtualObject();
+        MoreAsserts.assertEmpty(BeanUtil.getProperties(obj, true, true));
     }
 }
