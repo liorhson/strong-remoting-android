@@ -419,8 +419,6 @@ public class RestAdapter extends Adapter {
                     }
                 }
                 else if (parameterEncoding == ParameterEncoding.FORM_MULTIPART) {
-                    contentType = "multipart/form-data";
-
                     if (!"POST".equalsIgnoreCase(method)) {
                         throw new UnsupportedOperationException(
                                 "RestAdapter does not support multipart PUT requests");
@@ -531,6 +529,9 @@ public class RestAdapter extends Adapter {
                 if ( value != null ) {
                     if ( value instanceof java.io.File ) {
                         requestParams.put(entry.getKey(), (java.io.File)value);
+                    }
+                    else if (value instanceof StreamParam) {
+                        ((StreamParam) value).putTo(requestParams, entry.getKey());
                     }
                     else if ( value instanceof String ) {
                         requestParams.put(entry.getKey(), (String) entry.getValue());
