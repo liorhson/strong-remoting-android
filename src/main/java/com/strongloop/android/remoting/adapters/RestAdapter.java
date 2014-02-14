@@ -537,7 +537,9 @@ public class RestAdapter extends Adapter {
                         requestParams.put(entry.getKey(), (String) entry.getValue());
                     }
                     else {
-                        throw new IllegalArgumentException("Unknown param type for RequestParams");
+                        throw new IllegalArgumentException(
+                                "Unknown param type for RequestParams: "
+                                        + value.getClass().getName());
                     }
                 }
             }
