@@ -10,8 +10,9 @@ import com.strongloop.android.remoting.adapters.Adapter;
  * A local representative of remote model repository, it provides
  * access to static methods like <pre>User.findById()</pre>.
  */
-public class Repository {
+public class Repository<T extends VirtualObject> {
 
+    private final Class<T> objectClass;
     private String className;
     private Adapter adapter;
 
@@ -20,11 +21,25 @@ public class Repository {
      * @param className The remote class name.
      */
     public Repository(String className) {
+        this(className, null);
+    }
+
+    /**
+     * Creates a new Repository, associating it with the named remote class.
+     * @param className The remote class name.
+     */
+    @SuppressWarnings("unchecked")
+    public Repository(String className, Class<T> objectClass) {
         if (className == null || className.length() == 0) {
             throw new IllegalArgumentException(
                     "Class name cannot be null or empty.");
         }
         this.className = className;
+
+        if (objectClass != null)
+            this.objectClass = objectClass;
+        else
+            this.objectClass = (Class<T>)VirtualObject.class;
     }
 
     /**
@@ -61,9 +76,23 @@ public class Repository {
      * @param creationParameters The creation parameters of the new object.
      * @return A new {@link VirtualObject} based on this prototype.
      */
-    public VirtualObject createObject(
+    public T createObject(
             Map<String, ? extends Object> creationParameters) {
-        return new VirtualObject(this, creationParameters);
+        T object = null;
+        try {
+            object = objectClass.newInstance();
+        }
+        catch (Exception e) {
+            IllegalArgumentException ex = new IllegalArgumentException();
+            ex.initCause(e);
+            throw ex;
+        }
+        object.setRepository(this);
+        if (creationParameters != null) {
+            object.setCreationParameters(creationParameters);
+            BeanUtil.setProperties(object, creationParameters, true);
+        }
+        return object;
     }
 
     /**
