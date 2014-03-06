@@ -209,11 +209,12 @@ public class RestAdapter extends Adapter {
         }
 
         @Override
-        public void onSuccess(String response) {
-            if (LOG) {
-                Log.i("RestAdapter", "Success: " + response);
-            }
+        public void onSuccess(int status, Header[] headers, byte[] body) {
             try {
+                String response = body == null ? null : new String(body, getCharset());
+                if (LOG) {
+                    Log.i("RestAdapter", "Success: " + response);
+                }
                 callback.onSuccess(response);
             } catch (Throwable t) {
                 callback.onError(t);
@@ -274,7 +275,7 @@ public class RestAdapter extends Adapter {
         }
 
         @Override
-        public void onSuccess(byte[] binaryData) {
+        public void onSuccess(int statusCode, Header[] headers, byte[] binaryData) {
             if (LOG) {
                 Log.i("RestAdapter", "Binary Response Success");
             }
