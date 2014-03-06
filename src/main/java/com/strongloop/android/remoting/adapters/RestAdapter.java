@@ -3,11 +3,13 @@
 package com.strongloop.android.remoting.adapters;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -41,6 +43,7 @@ import com.strongloop.android.remoting.JsonUtil;
  * @see RestContract
  */
 public class RestAdapter extends Adapter {
+    private static final String TAG = "remoting.RestAdapter";
 
     private HttpClient client;
     private RestContract contract;
@@ -209,11 +212,11 @@ public class RestAdapter extends Adapter {
         }
 
         @Override
-        public void onSuccess(String response) {
-            if (LOG) {
-                Log.i("RestAdapter", "Success: " + response);
-            }
+        public void onSuccess(int status, Header[] headers, byte[] body) {
             try {
+                String response = body == null ? null : new String(body, getCharset());
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "Success (string): " + response);
                 callback.onSuccess(response);
             } catch (Throwable t) {
                 callback.onError(t);
@@ -225,7 +228,7 @@ public class RestAdapter extends Adapter {
                               org.apache.http.Header[] headers,
                               byte[] responseBody,
                               java.lang.Throwable error) {
-            if (LOG) {
+            if (Log.isLoggable(TAG, Log.WARN)) {
                 String message;
                 if (error != null) {
                     message = error.toString();
@@ -237,7 +240,7 @@ public class RestAdapter extends Adapter {
                         message += new String(responseBody);
                     }
                 }
-                Log.i("RestAdapter", "Error: " + message);
+                Log.w(TAG, "HTTP request (string) failed: " + message);
             }
             callback.onError(error);
         }
@@ -256,7 +259,7 @@ public class RestAdapter extends Adapter {
                               org.apache.http.Header[] headers,
                               byte[] responseBody,
                               java.lang.Throwable error) {
-            if (LOG) {
+            if (Log.isLoggable(TAG, Log.WARN)) {
                 String message;
                 if (error != null) {
                     message = error.toString();
@@ -268,16 +271,15 @@ public class RestAdapter extends Adapter {
                         message += new String(responseBody);
                     }
                 }
-                Log.i("RestAdapter", "BinaryError: " + message);
+                Log.w(TAG, "HTTP request (binary) failed: " + message);
             }
             callback.onError(error);
         }
 
         @Override
-        public void onSuccess(byte[] binaryData) {
-            if (LOG) {
-                Log.i("RestAdapter", "Binary Response Success");
-            }
+        public void onSuccess(int statusCode, Header[] headers, byte[] binaryData) {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "Success (binary): " + binaryData.length + " bytes");
             try {
                 callback.onSuccess(binaryData);
             } catch (Throwable t) {
@@ -295,8 +297,6 @@ public class RestAdapter extends Adapter {
     // an asynchronous API, Android bug workarounds, etc.
     // The drawback is it doesn't support HEAD or OPTION.
     //
-
-    private static final boolean LOG = false;
 
     enum ParameterEncoding {
         FORM_URL,
@@ -415,7 +415,7 @@ public class RestAdapter extends Adapter {
                     }
                     catch (UnsupportedEncodingException e) {
                         // Won't happen
-                        Log.e("RestAdapter", "Couldn't encode url params", e);
+                        Log.e(TAG, "Couldn't encode url params", e);
                     }
                 }
                 else if (parameterEncoding == ParameterEncoding.FORM_MULTIPART) {
@@ -438,15 +438,14 @@ public class RestAdapter extends Adapter {
                         s = String.valueOf(JsonUtil.toJson(parameters));
                     }
                     catch (JSONException e) {
-                        Log.e("RestAdapter",
-                        		"Couldn't convert parameters to JSON", e);
+                        Log.e(TAG, "Couldn't convert parameters to JSON", e);
                     }
                     try {
                         body = new StringEntity(s, charset);
                     }
                     catch (UnsupportedEncodingException e) {
                         // Won't happen
-                        Log.e("RestAdapter", "Couldn't encode JSON params", e);
+                        Log.e(TAG, "Couldn't encode JSON params", e);
                     }
                 }
 
@@ -457,10 +456,7 @@ public class RestAdapter extends Adapter {
             };
 
             String url = uri.build().toString();
-            if (LOG) {
-                Log.i("RestAdapter", method + " " + url);
-                if (body != null) Log.i("RestAdapter", body.toString());
-            }
+            logRequest(method, url, body, requestParams);
 
             if ("GET".equalsIgnoreCase(method)) {
                 get(context, url, headers, null, httpCallback);
@@ -480,6 +476,23 @@ public class RestAdapter extends Adapter {
             else {
                 throw new IllegalArgumentException("Illegal method: " +
                         method + ". Only GET, POST, PUT, DELETE supported.");
+            }
+        }
+
+        private void logRequest(String method, String url, HttpEntity body, RequestParams requestParams) {
+            if (!Log.isLoggable(TAG, Log.DEBUG)) return;
+            Log.d(TAG, method + " " + url);
+            if (requestParams != null)
+                Log.d(TAG, requestParams.toString());
+            else if (body != null && body.isRepeatable()) {
+                try {
+                    // Convert body stream to string
+                    // Based on http://stackoverflow.com/a/5445161/69868
+                    Scanner s = new Scanner(body.getContent()).useDelimiter("\\A");
+                    if (s.hasNext())
+                        Log.d(TAG, s.next());
+                } catch (IOException e) {
+                }
             }
         }
 
