@@ -281,7 +281,12 @@ public class RestAdapter extends Adapter {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "Success (binary): " + binaryData.length + " bytes");
             try {
-                callback.onSuccess(binaryData);
+                String contentType = null;
+                for (Header h: headers) {
+                    if (h.getName().equalsIgnoreCase("content-type"))
+                        contentType = h.getValue();
+                }
+                callback.onSuccess(binaryData, contentType);
             } catch (Throwable t) {
                 callback.onError(t);
             }
