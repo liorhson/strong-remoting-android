@@ -26,9 +26,10 @@ public abstract class Adapter {
 
         /**
          * The method invoked when the call completes successfully.
-         * @param response The response body.
+         * @param body The response body.
+         * @param contentType The value of "Content-Type" response header.
          */
-        public void onSuccess(byte[] response);
+        public void onSuccess(byte[] body, String contentType);
 
         /**
          * The method invoked when an error occurs.

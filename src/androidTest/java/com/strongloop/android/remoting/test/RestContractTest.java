@@ -256,8 +256,9 @@ public class RestContractTest extends AsyncTestCase {
                 adapter.invokeStaticMethod("contract.binary", null,
                         new Adapter.BinaryCallback() {
                             @Override
-                            public void onSuccess(byte[] response) {
-                                // The value is hard-coded in test-server/contract.js
+                            public void onSuccess(byte[] response, String contentType) {
+                                // The values are hard-coded in test-server/contract.js
+                                assertEquals("application/octet-stream", contentType);
                                 MoreAsserts.assertEquals(new byte[]{1, 2, 3}, response);
                                 notifyFinished();
                             }
